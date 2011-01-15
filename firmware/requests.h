@@ -3,7 +3,7 @@
 // #############################################################################
 // # requests.h - USB class command definitions                                #
 // #############################################################################
-// #              Version: 1.0 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
 // #  (c) 2011 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
@@ -25,16 +25,40 @@
 
  // Request that the device sends back wValue and wIndex. This is used with
  // random data to test the reliability of the communication.
- #define FUNK_RQ_ECHO 0
+ #define FUNK_RQ_ECHO   0
  
- // Uses Control Endpoint 0 to submit housecode, code and on/off state to the
- // device which sends it immediately
+ // We use Control Endpoint 0 to submit data to the
+ // device which converts and sends it immediately
+
+ // --- PT2272 (12 bit code, no data) ---
+ // wValue: code
+ #define FUNK_RQ_TX_0   1
+ 
+ // --- PT2272A-M2/L2 (10 bit code, 2 bit data) ---
  // wValue: low byte: house code, high byte: code, 
  // wIndex: low byte: 1 = on, 2 = off
- #define FUNK_RQ_TX 1
+ #define FUNK_RQ_TX_2   2
+ 
+ // --- PT2272A-M4/L4 (8 bit code, 4 bit data) ---
+ // wValue: low byte: house code, high byte: code, 
+ // wIndex: low byte: 1 = on, 2 = off
+ #define FUNK_RQ_TX_4   3
+
+ // --- PT2272 raw mode (raw write to tx buffer) ---
+ // wValue: low byte: buffer LSB, high byte: buffer,
+ // wIndex: low byte: buffer MSB
+ #define FUNK_RQ_TX_RAW 4 
+ 
+ // --- Heidemann HX doorbell ---
+ // wValue: low byte: code, high byte: tone
+ #define FUNK_RQ_TX_HX  5 
+
+ // Set how many times the code should be sent
+ // wValue: low byte: n
+ #define FUNK_RQ_SETTIM 6
  
  // Request the tx status from the device. Value is returned in buffer[0],
  // 0 = send in progress.
- #define FUNK_RQ_STATUS 2
+ #define FUNK_RQ_STATUS 7
  
 #endif
