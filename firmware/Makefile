@@ -101,7 +101,7 @@ COMPILE = avr-gcc -Wall -Os -DF_CPU=$(F_CPU) $(CFLAGS) -mmcu=$(DEVICE)
 # symbolic targets:
 hex: main.hex
 
-program: flash fuse
+program: flash eeprom fuse
 
 # rule for programming fuse bits:
 fuse:
@@ -113,9 +113,12 @@ fuse:
 flash: main.hex
 	$(AVRDUDE) -U flash:w:main.hex:i
 
+eeprom:
+	$(AVRDUDE) -U eeprom:w:main.eep:i
+
 # rule for deleting dependent files (those which can be built by Make):
 clean:
-	rm -f main.hex main.lst main.obj main.cof main.list main.map main.eep.hex main.elf *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s
+	rm -f main.hex main.lst main.obj main.cof main.list main.map main.eep main.elf *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s
 
 # Generic rule for compiling C files:
 .c.o:
@@ -143,9 +146,11 @@ main.elf: usbdrv $(OBJECTS)	# usbdrv dependency only needed because we copy it
 	$(COMPILE) -o main.elf $(OBJECTS)
 
 main.hex: main.elf
-	rm -f main.hex main.eep.hex
+	rm -f main.hex main.eep
 	avr-objcopy -j .text -j .data -O ihex main.elf main.hex
+	avr-objcopy -j .eeprom -O ihex main.elf main.eep
 	avr-size main.hex
+	avr-size main.eep
 
 # debugging targets:
 

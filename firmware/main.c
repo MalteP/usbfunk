@@ -33,7 +33,7 @@
  #include "portdef.h"
  #include "wireless.h"
  
- uint8_t n_times_ee EEMEM;
+ uint8_t n_times_ee EEMEM = 0x05;
 
  // --- USB interface ---
  usbMsgLen_t usbFunctionSetup(uchar data[8])
