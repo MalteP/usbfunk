@@ -103,6 +103,8 @@ hex: main.hex
 
 program: flash eeprom fuse
 
+update: flash eeprom
+
 # rule for programming fuse bits:
 fuse:
 	@[ "$(FUSE_H)" != "" -a "$(FUSE_L)" != "" ] || \

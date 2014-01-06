@@ -3,8 +3,8 @@
 // #############################################################################
 // # main.c - Main function                                                    #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2011 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 2011-2014 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de   #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -22,24 +22,28 @@
 
  #include <avr/io.h>
  #include <avr/wdt.h>
- #include <avr/interrupt.h>                          // for sei()
- #include <util/delay.h>                             // for _delay_ms()
+ #include <avr/interrupt.h>                                // for sei()
+ #include <util/delay.h>                                   // for _delay_ms()
  #include <avr/eeprom.h>
 
- #include <avr/pgmspace.h>                           // required by usbdrv.h
+ #include <avr/pgmspace.h>                                 // required by usbdrv.h
  #include "usbdrv.h"
- #include "requests.h"                               // The custom request numbers we use
+ #include "requests.h"                                     // The custom request numbers we use
 
  #include "portdef.h"
  #include "wireless.h"
  
- uint8_t n_times_ee EEMEM = 0x05;
+ volatile uint8_t n_ledinv;
+
+ uint8_t n_times_ee  EEMEM = 0x05;
+ uint8_t n_ledinv_ee EEMEM = 0x00;
+
 
  // --- USB interface ---
  usbMsgLen_t usbFunctionSetup(uchar data[8])
   {
    usbRequest_t *rq = (void *)data;
-   static uchar dataBuffer[4];                       // buffer must stay valid when usbFunctionSetup returns 
+   static uchar dataBuffer[4];                             // buffer must stay valid when usbFunctionSetup returns 
 
    if(rq->bRequest == FUNK_RQ_ECHO)
     { 
@@ -48,7 +52,7 @@
      dataBuffer[1] = rq->wValue.bytes[1];
      dataBuffer[2] = rq->wIndex.bytes[0];
      dataBuffer[3] = rq->wIndex.bytes[1];
-     usbMsgPtr = dataBuffer;                         // tell the driver which data to return
+     usbMsgPtr = dataBuffer;                               // tell the driver which data to return
      return 4;
     } else
      if(rq->bRequest == FUNK_RQ_SETTIM)
@@ -60,38 +64,53 @@
          eeprom_write_byte(&n_times_ee, n_times);
         }
       } else
-       if(rq->bRequest == FUNK_RQ_TX_0)
+       if(rq->bRequest == FUNK_RQ_SETLED)
         {
-         // start tx (12 bit code, no data)
-         wireless_switch_0(rq->wValue.word);
-        } else
-         if(rq->bRequest == FUNK_RQ_TX_2)
+         // set led normal or inverted
+         if(rq->wValue.bytes[0]!=n_ledinv)
           {
-           // start tx (10 bit code, 2 bit data)
-           wireless_switch_2(rq->wValue.bytes[0],rq->wValue.bytes[1],rq->wIndex.bytes[0]);
+           n_ledinv = rq->wValue.bytes[0];
+           if(n_ledinv>1) n_ledinv = 1;
+           eeprom_write_byte(&n_ledinv_ee, n_ledinv);
+          }
+        } else
+         if(rq->bRequest == FUNK_RQ_TX_0)
+          {
+           // start tx (12 bit code, no data)
+           wireless_switch_0(rq->wValue.word);
           } else
-           if(rq->bRequest == FUNK_RQ_TX_4)
+           if(rq->bRequest == FUNK_RQ_TX_2)
             {
-             // start tx (8 bit code, 4 bit data)
-             wireless_switch_4(rq->wValue.bytes[0],rq->wValue.bytes[1],rq->wIndex.bytes[0]);
+             // start tx (10 bit code, 2 bit data)
+             wireless_switch_2(rq->wValue.bytes[0],rq->wValue.bytes[1],rq->wIndex.bytes[0]);
             } else
-             if(rq->bRequest == FUNK_RQ_TX_RAW)
+             if(rq->bRequest == FUNK_RQ_TX_4)
               {
-               // start tx (raw write to tx buffer)
-               wireless_switch_raw(rq->wValue.bytes[0],rq->wValue.bytes[1],rq->wIndex.bytes[0]);
+               // start tx (8 bit code, 4 bit data)
+               wireless_switch_4(rq->wValue.bytes[0],rq->wValue.bytes[1],rq->wIndex.bytes[0]);
               } else
-               if(rq->bRequest == FUNK_RQ_TX_HX)
+               if(rq->bRequest == FUNK_RQ_TX_HE)
                 {
-                 // start tx (Heidemann HX dorbell)
-                 wireless_bell(rq->wValue.bytes[0],rq->wValue.bytes[1]);
+                 // start tx (16 bit decimal code, 4 bit data)
+                 wireless_switch_he(rq->wValue.word,rq->wIndex.bytes[0]);
                 } else
-                 if(rq->bRequest == FUNK_RQ_STATUS)
+                 if(rq->bRequest == FUNK_RQ_TX_RAW)
                   {
-                   dataBuffer[0] = wireless_status();  // send in progress?
-                   usbMsgPtr = dataBuffer;             // tell the driver which data to return
-                   return 1;                           // tell the driver to send 1 byte
-                  }
-   return 0;                                         // default for not implemented requests: return no data back to host
+                   // start tx (raw write to tx buffer)
+                   wireless_switch_raw(rq->wValue.bytes[0],rq->wValue.bytes[1],rq->wIndex.bytes[0]);
+                  } else
+                   if(rq->bRequest == FUNK_RQ_TX_HX)
+                    {
+                     // start tx (Heidemann HX dorbell)
+                     wireless_bell(rq->wValue.bytes[0],rq->wValue.bytes[1]);
+                    } else
+                     if(rq->bRequest == FUNK_RQ_STATUS)
+                      {
+                       dataBuffer[0] = wireless_status();  // send in progress?
+                       usbMsgPtr = dataBuffer;             // tell the driver which data to return
+                       return 1;                           // tell the driver to send 1 byte
+                      }
+   return 0;                                               // default for not implemented requests: return no data back to host
   }
 
 
@@ -102,8 +121,8 @@
    wdt_enable(WDTO_1S);
 
    usbInit();
-   usbDeviceDisconnect();                            // enforce re-enumeration, do this while interrupts are disabled!
-   while(--i)                                        // fake USB disconnect for > 250 ms
+   usbDeviceDisconnect();                                  // enforce re-enumeration, do this while interrupts are disabled!
+   while(--i)                                              // fake USB disconnect for > 250 ms
     {
      wdt_reset();
      _delay_ms(1);
@@ -111,17 +130,18 @@
    usbDeviceConnect();
       
    wireless_init();   
-   n_times = eeprom_read_byte(&n_times_ee);          // load from eeprom, override defaults
+   n_times  = eeprom_read_byte(&n_times_ee);               // load from eeprom, override defaults
+   n_ledinv = eeprom_read_byte(&n_ledinv_ee);
    
    sei();
    
-   LED_PORT_DDR |= (1<<LED_BIT);                     // make the LED bit an output
+   LED_PORT_DDR |= (1<<LED_BIT);                           // make the LED bit an output
 
-   for(;;)                                           // main event loop 
+   for(;;)                                                 // main event loop 
     {
      wdt_reset();
      usbPoll();
      // make the led flash if send in progress
-     if(wireless_status()==0) LED_PORT_OUTPUT &= ~(1<<LED_BIT); else LED_PORT_OUTPUT |= (1<<LED_BIT);
+     if(wireless_status()==n_ledinv) LED_PORT_OUTPUT &= ~(1<<LED_BIT); else LED_PORT_OUTPUT |= (1<<LED_BIT);
     }
   }

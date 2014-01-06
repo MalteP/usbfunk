@@ -3,8 +3,8 @@
 // #############################################################################
 // # portdef.h - Port definitions                                              #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2011 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 2011-2014 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de   #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #

@@ -3,8 +3,8 @@
 // #############################################################################
 // # requests.h - USB class command definitions                                #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2011 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 2011-2014 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de   #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -60,5 +60,14 @@
  // Request the tx status from the device. Value is returned in buffer[0],
  // 0 = send in progress.
  #define FUNK_RQ_STATUS 7
+
+ // Set if the led status should be inverted or not
+ // wValue: low byte: 0 or 1
+ #define FUNK_RQ_SETLED 8
  
+ // --- Elro Home Easy ---
+ // wValue: code
+ // wIndex: status
+ #define FUNK_RQ_TX_HE  9
+
 #endif

@@ -3,8 +3,8 @@
 // #############################################################################
 // # wireless.c - Wireless functions                                           #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2011 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 2011-2014 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de   #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -33,6 +33,13 @@
  volatile uint8_t repeat;
  volatile uint8_t mode;
 
+ // Array with powers and multiples of powers of three,
+ // needed for ELRO Home Easy ternary code conversion
+ const uint16_t powers_of_three[16] =
+  {
+   4374, 2187, 1458, 729, 486, 243, 162, 81, 54, 27, 18, 9, 6, 3, 2, 1
+  };
+
 
  // --- Initialize wireless ---
  void wireless_init( void )
@@ -40,16 +47,26 @@
    TX_PORT_DDR |= (1<<TX_BIT);
    TX_PORT_OUTPUT &= ~(1<<TX_BIT);
 
-   repeat=0;
-   mask=0;
-   counter=0;
-   mode=MODE_PT;
+   wireless_clear();
    n_times = N_TIMES_DEFAULT;
 
    TCCR0B = (1<<CS00) | (1<<CS01);               // Setup prescaler (12MHz / 64)
    TIMSK0 |= (1<<TOIE0);                         // Setup interrupt   
     
    // Remember to call sei() after initialization!
+  }
+
+
+ // --- Clear wireless buffer ---
+ void wireless_clear( void )
+  {
+   repeat=0;
+   mask=0;
+   counter=0;
+   mode=MODE_PT;
+   buffer[0] = 0;
+   buffer[1] = 0;
+   buffer[2] = 0;
   }
 
 
@@ -169,6 +186,54 @@
   }
 
 
+ // --- Translate decimal value for wireless plug to   ---
+ // --- ternary tx pattern for Elro Home Easy UK       ---
+ // --- (8 bit code, 4 bit data)                       ---
+ // --- Conversion code by Yannic "Yan Nic" Schröder   ---
+ void wireless_switch_he( uint16_t code, uint8_t state )
+  {
+   uint8_t i;
+   // Result of the test if a certain power of three fits into the decimal number
+   int16_t result;
+   // Clear buffer
+   buffer[0] = 0;
+   buffer[1] = 0;
+   // Add two bits of pulsecode for every power of three
+   for (i=0; i<16; i+=2)
+    {
+     // Make space for new bits
+     buffer[i/8] = (buffer[i/8]<<2);
+     // Subtract power of three
+     result = code - powers_of_three[i];
+     // If (2*3^i) does not fit into the decimal number
+     if (result < 0)
+      {
+       result = code - powers_of_three[i+1];
+       // If (1*3^i) does not fit into the decimal number
+       if (result < 0)
+        {
+         // Do nothing
+        } else {
+         // Set the lower two bits of the pulsecode to 0b11
+         buffer[i/8] |= 0x3;
+         // Use the current result for the next loop
+         code = (uint16_t)result;
+        }
+      } else {
+       // Set the lower two bits of the pulsecode to 0b01
+       buffer[i/8] |= 0x1;
+       // Use the current result for the next loop
+       code = (uint16_t)result;
+      }
+    }
+   // Shift and write last four bits
+   buffer[2] = state;
+   // Start transmission in timer interrupt
+   mode=MODE_PT;
+   repeat=CODE_REPEAT;
+  }
+
+
  // --- Write directly to tx buffer. May be used to    ---
  // --- create more special codes and to send logical  ---
  // --- 1 (11) which is not used by the most devices   ---
@@ -209,7 +274,7 @@
 
 
  // --- Interrupt for protocol waveform ---
- ISR( TIMER0_OVF_vect ) 
+ ISR( TIMER0_OVF_vect, ISR_NOBLOCK )
   {
    if(repeat>0)
     {

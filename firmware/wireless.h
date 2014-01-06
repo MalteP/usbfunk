@@ -3,8 +3,8 @@
 // #############################################################################
 // # wireless.h - Wireless functions (Header)                                  #
 // #############################################################################
-// #              Version: 1.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 2011 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de   #
+// #              Version: 1.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 2011-2014 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de   #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -41,9 +41,11 @@
  #define MODE_HX               1                 // Heidemann HX
 
  void wireless_init( void );
+ void wireless_clear( void );
  void wireless_switch_0( uint16_t code );
  void wireless_switch_2( uint8_t housecode, uint8_t code, uint8_t state );
  void wireless_switch_4( uint8_t housecode, uint8_t code, uint8_t state );
+ void wireless_switch_he( uint16_t code, uint8_t state );
  void wireless_switch_raw( uint8_t code_0, uint8_t code_1, uint8_t code_2 );
  void wireless_bell( uint8_t code, uint8_t sound );
  uint8_t wireless_status( void );
