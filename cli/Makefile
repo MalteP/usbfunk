@@ -24,7 +24,7 @@ EXE_SUFFIX =
 
 NAME = usbfunk
 
-OBJECTS = opendevice.o $(NAME).o
+OBJECTS = usbfunk.o main.o
 
 CC		= gcc
 CFLAGS	= $(CPPFLAGS) $(USBFLAGS) -O -g -Wall

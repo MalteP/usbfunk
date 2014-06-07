@@ -34,13 +34,14 @@
 		<Linker>
 			<Add option="-lusb" />
 		</Linker>
-		<Unit filename="opendevice.c">
+		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="opendevice.h" />
+		<Unit filename="main.h" />
 		<Unit filename="usbfunk.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="usbfunk.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
